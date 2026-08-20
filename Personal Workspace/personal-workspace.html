@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<title>我的专属工作台</title>
+<style>
+  :root{
+    --pink:#FFB3C6; --mint:#B8E0D2; --lav:#C8B6E2; --peach:#FFD6A5;
+    --sky:#A0D2EB; --lemon:#FCEEA7; --rose:#FF9EB5; --ink:#3A3A4A;
+    --sub:#8A8A99; --line:rgba(255,255,255,0.55);
+    --glass:rgba(255,255,255,0.55); --glass-strong:rgba(255,255,255,0.72);
+    --shadow:0 8px 30px rgba(150,140,170,0.18);
+    --red:#FF6B81; --green:#4CC38A;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 800px at 10% 0%, #FFE3EC 0%, transparent 55%),
+      radial-gradient(1000px 700px at 95% 10%, #DCEEFB 0%, transparent 50%),
+      radial-gradient(900px 700px at 50% 100%, #E6F7EE 0%, transparent 55%),
+      linear-gradient(135deg,#FDEFF4 0%,#EFF5FF 100%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar (left vertical nav) ---------- */
+  .sidebar{
+    width:248px;flex-shrink:0;padding:22px 16px;
+    display:flex;flex-direction:column;gap:8px;
+    background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    border-right:1px solid var(--line);position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 14px;}
+  .brand .logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--pink),var(--lav));box-shadow:var(--shadow);}
+  .brand .logo svg{width:22px;height:22px;}
+  .brand .ttl{font-weight:700;font-size:16px;letter-spacing:.3px;}
+  .brand .ttl small{display:block;font-weight:500;font-size:11px;color:var(--sub);}
+  .nav{display:flex;flex-direction:column;gap:6px;flex:1;overflow-y:auto;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;
+    cursor:pointer;border:1px solid transparent;transition:.18s;font-size:15px;font-weight:600;color:var(--ink);}
+  .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+  .nav-item:hover{background:rgba(255,255,255,0.6);}
+  .nav-item.active{background:linear-gradient(135deg,rgba(255,179,198,.85),rgba(200,182,226,.85));
+    color:#fff;box-shadow:var(--shadow);border-color:rgba(255,255,255,.6);}
+  .nav-item .dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--red);display:none;}
+  .nav-item.alert .dot{display:block;}
+  .side-foot{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line);}
+  .side-foot button{flex:1;font-size:12px;padding:9px 4px;border:none;border-radius:12px;
+    background:rgba(255,255,255,.6);color:var(--ink);cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .side-foot button svg{width:15px;height:15px;}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;min-width:0;padding:20px 26px 60px;overflow-x:hidden;}
+  .topbar{display:none;align-items:center;gap:12px;margin-bottom:14px;}
+  .topbar .menu-btn{width:44px;height:44px;border-radius:14px;border:none;background:var(--glass-strong);
+    backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow);}
+  .topbar .menu-btn svg{width:22px;height:22px;}
+  .topbar h1{font-size:18px;margin:0;}
+
+  .today-card{background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border:1px solid var(--line);border-radius:22px;padding:16px 18px;margin-bottom:18px;box-shadow:var(--shadow);}
+  .today-card h3{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px;color:var(--sub);font-weight:700;}
+  .today-card h3 svg{width:18px;height:18px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{font-size:13px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.7);
+    border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;}
+  .chip.alert{background:rgba(255,107,129,.16);color:var(--red);border-color:rgba(255,107,129,.3);}
+  .chip.ok{background:rgba(76,195,138,.14);color:var(--green);border-color:rgba(76,195,138,.3);}
+  .chip svg{width:15px;height:15px;}
+
+  .module{display:none;animation:fade .25s ease;}
+  .module.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .m-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+  .m-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:.3px;}
+  .m-head .sub{color:var(--sub);font-size:13px;font-weight:500;}
+
+  .card{background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--line);border-radius:20px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .card h4{margin:0 0 12px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .card h4 svg{width:18px;height:18px;}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  input,select,textarea{font-family:inherit;font-size:16px;color:var(--ink);
+    background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:14px;padding:12px 14px;outline:none;width:100%;}
+  input:focus,select:focus,textarea:focus{border-color:var(--lav);box-shadow:0 0 0 3px rgba(200,182,226,.3);}
+  textarea{resize:vertical;min-height:60px;}
+  .btn{border:none;border-radius:14px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer;
+    background:linear-gradient(135deg,var(--pink),var(--lav));color:#fff;box-shadow:var(--shadow);display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+  .btn svg{width:17px;height:17px;}
+  .btn.ghost{background:rgba(255,255,255,.7);color:var(--ink);box-shadow:none;border:1px solid var(--line);}
+  .btn.mint{background:linear-gradient(135deg,var(--mint),var(--sky));}
+  .btn.peach{background:linear-gradient(135deg,var(--peach),var(--lemon));color:var(--ink);}
+  .btn:active{transform:scale(.97);}
+  .mic{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.75);
+    display:grid;place-items:center;cursor:pointer;flex-shrink:0;}
+  .mic svg{width:20px;height:20px;}
+  .mic.rec{background:var(--red);border-color:var(--red);}
+  .mic.rec svg{fill:#fff;stroke:#fff;}
+
+  .item{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:16px;
+    background:rgba(255,255,255,.62);border:1px solid var(--line);margin-bottom:9px;}
+  .item .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;background:rgba(255,255,255,.7);}
+  .item .ic svg{width:20px;height:20px;}
+  .item .body{flex:1;min-width:0;}
+  .item .body .t{font-weight:600;font-size:15px;word-break:break-word;}
+  .item .body .m{font-size:12px;color:var(--sub);margin-top:2px;}
+  .item .act{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+  .chk{width:24px;height:24px;border-radius:8px;border:2px solid var(--lav);cursor:pointer;display:grid;place-items:center;background:#fff;}
+  .chk svg{width:15px;height:15px;opacity:0;}
+  .chk.done{background:var(--green);border-color:var(--green);}
+  .chk.done svg{opacity:1;fill:#fff;stroke:#fff;}
+  .mini{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.7);display:grid;place-items:center;cursor:pointer;}
+  .mini svg{width:16px;height:16px;}
+  .mini.danger:hover{background:rgba(255,107,129,.15);}
+  .tag{font-size:11px;padding:3px 9px;border-radius:10px;background:rgba(200,182,226,.25);color:#7a5ca8;font-weight:700;}
+  .tag.red{background:rgba(255,107,129,.18);color:var(--red);}
+  .tag.green{background:rgba(76,195,138,.18);color:var(--green);}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
+  .stat{background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;}
+  .stat .n{font-size:24px;font-weight:800;}
+  .stat .l{font-size:12px;color:var(--sub);margin-top:2px;}
+
+  .big-num{font-size:40px;font-weight:800;letter-spacing:1px;}
+  .progress-wrap{height:14px;border-radius:10px;background:rgba(255,255,255,.6);overflow:hidden;margin-top:10px;}
+  .progress-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--mint),var(--sky));transition:.4s;}
+  .ring-wrap{display:flex;align-items:center;gap:18px;}
+  .legend{font-size:13px;color:var(--sub);}
+
+  .book-card{display:flex;gap:14px;align-items:center;}
+  .book-cover{width:64px;height:88px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;color:#fff;font-weight:800;font-size:22px;
+    background:linear-gradient(135deg,var(--lav),var(--pink));box-shadow:var(--shadow);}
+  .timer{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px;}
+
+  .modal-mask{position:fixed;inset:0;background:rgba(60,55,80,.35);backdrop-filter:blur(4px);display:none;place-items:center;z-index:50;padding:20px;}
+  .modal-mask.show{display:grid;}
+  .modal{background:#fff;border-radius:22px;padding:22px;max-width:420px;width:100%;box-shadow:var(--shadow);}
+  .modal h3{margin:0 0 12px;}
+  .modal .row{margin-top:14px;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(58,58,74,.92);color:#fff;
+    padding:12px 20px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:.3s;z-index:99;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .hint{font-size:12.5px;color:var(--sub);line-height:1.6;background:rgba(255,255,255,.5);border:1px dashed var(--line);border-radius:14px;padding:11px 13px;margin-top:10px;}
+  .empty{text-align:center;color:var(--sub);padding:24px;font-size:14px;}
+
+  /* ---------- Mobile: left drawer nav ---------- */
+  @media (max-width:768px){
+    .sidebar{position:fixed;left:0;top:0;z-index:40;transform:translateX(-100%);transition:.28s;box-shadow:var(--shadow);}
+    .sidebar.open{transform:translateX(0);}
+    .topbar{display:flex;}
+    .main{padding:14px 14px 90px;}
+    .mask{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:35;display:none;}
+    .mask.show{display:block;}
+    .item .body .t{font-size:14px;}
+    .m-head h2{font-size:19px;}
+    .stat .n{font-size:20px;}
+  }
+  @media (min-width:769px){ .mask{display:none!important;} }
+  body{padding-bottom:env(safe-area-inset-bottom);}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar / left vertical nav -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21V12h6v9"/></svg>
+      </div>
+      <div class="ttl">我的专属工作台<small id="ownerName">个人版</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-mod="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>每日计划<span class="dot"></span></div>
+      <div class="nav-item" data-mod="reading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>每日阅读<span class="dot"></span></div>
+      <div class="nav-item" data-mod="english"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>英语学习<span class="dot"></span></div>
+      <div class="nav-item" data-mod="skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>技能学习<span class="dot"></span></div>
+      <div class="nav-item" data-mod="savings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5-1.5 3-3.5 3-5.5A3.5 3.5 0 0 0 12 6 3.5 3.5 0 0 0 2 8.5C2 12 5 15 12 21c2-2 4-3.5 7-7z"/><circle cx="12" cy="8" r="1.6"/></svg>存钱计划<span class="dot"></span></div>
+      <div class="nav-item" data-mod="memos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>备忘录<span class="dot"></span></div>
+    </nav>
+    <div class="side-foot">
+      <button onclick="exportAll()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>导出</button>
+      <button onclick="document.getElementById('importFile').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 8l5-5 5 5M12 3v12"/></svg>导入</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importAll(event)">
+    </div>
+  </aside>
+  <div class="mask" id="mask" onclick="closeDrawer()"></div>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <button class="menu-btn" onclick="openDrawer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1>我的专属工作台</h1>
+    </div>
+
+    <!-- 今天要处理 -->
+    <section class="today-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>今天要处理</h3>
+      <div class="chips" id="todayChips"></div>
+    </section>
+
+    <!-- 1. 每日计划 -->
+    <section class="module active" id="mod-plans">
+      <div class="m-head"><h2>每日计划</h2><span class="sub">每日新建 · 昨日未完成自动顺延</span></div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>添加今日任务</h4>
+        <div class="row">
+          <textarea id="planInput" placeholder="说点或输入今天要做的事…"></textarea>
+          <button class="mic" id="planMic" title="语音输入" onclick="voiceTo('planInput','planMic')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+          <button class="btn" onclick="addPlan()">添加</button>
+        </div>
+        <div class="hint">支持语音输入（点麦克风，需 Chrome/Edge/安卓；iOS Safari 支持有限会自动降级为手动）。每天 0 点后计划重置，昨日未勾选项会自动滚到今天。</div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>今日待办 <span id="planCount" class="tag"></span></h4>
+        <div id="planList"></div>
+      </div>
+    </section>
+
+    <!-- 2. 每日阅读 -->
+    <section class="module" id="mod-reading">
+      <div class="m-head"><h2>每日阅读</h2><span class="sub">每日推荐一本 · 点开即读 · 计时打卡</span></div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>今日推荐</h4>
+        <div class="book-card" id="featuredBook"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="readBtn" onclick="openFeatured()">开始阅读</button>
+          <button class="btn mint" id="timerBtn" onclick="toggleReadTimer()">⏱ 开始计时</button>
+        </div>
+        <div class="hint">书库为合法公版书（维基文库直链），每日按日期轮换推荐。没有想要的？在下方手动添加书籍名称与链接。阅读计时结束后自动记录今日阅读分钟数并打卡。</div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>手动添加书籍</h4>
+        <div class="row">
+          <input id="bookTitle" placeholder="书籍名称">
+          <input id="bookUrl" placeholder="电子书链接（可留空）" style="flex:2">
+          <button class="btn ghost" onclick="addBook()">添加</button>
+        </div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>阅读统计</h4>
+        <div class="stat-grid" id="readStats"></div>
+        <div id="readHistory" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <!-- 3. 英语学习 -->
+    <section class="module" id="mod-english">
+      <div class="m-head"><h2>英语学习</h2><span class="sub">单词本 · 每日背诵 · 周/月复习</span></div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>添加单词 / 词典</h4>
+        <div class="row">
+          <input id="wordTerm" placeholder="单词 / 词条">
+          <input id="wordDef" placeholder="释义" style="flex:2">
+          <button class="btn ghost" onclick="addWord()">添加</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn peach" onclick="searchEbook()">🔍 搜索电子书（古登堡公版书库）</button>
+        </div>
+        <div class="hint">可手动添加你正在使用的英语词典/词书条目；也可一键跳转古登堡计划检索英文原版电子书。系统依据你添加的条目，每日推送背诵任务，并支持每周/每月记忆检查。</div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>今日背诵任务 <span id="engCount" class="tag"></span></h4>
+        <div id="engToday"></div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>记忆检查</h4>
+        <div class="row">
+          <button class="btn" onclick="reviewCheck('week')">本周复习检查</button>
+          <button class="btn mint" onclick="reviewCheck('month')">本月复习检查</button>
+        </div>
+        <div id="reviewBox" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>词库与统计</h4>
+        <div class="stat-grid" id="engStats"></div>
+        <div id="wordList" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <!-- 4. 技能学习 -->
+    <section class="module" id="mod-skills">
+      <div class="m-head"><h2>技能学习</h2><span class="sub">自定义课程 · B站检索 · 进度追踪</span></div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>添加课程</h4>
+        <div class="row">
+          <input id="skillName" placeholder="课程名称">
+          <input id="skillPeriod" placeholder="学习周期（如 30 天）" style="max-width:160px">
+          <button class="btn ghost" onclick="addSkill()">添加并检索</button>
+        </div>
+        <div class="hint">添加后系统自动生成 B 站课程搜索链接，点开即看相关教学视频；也可自行粘贴课程链接。进度可手动拖动更新。"接入 B 站账号"需 OAuth 后端授权，当前提供手动进度录入（见说明）。</div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>我的课程</h4>
+        <div id="skillList"></div>
+        <button class="btn peach" style="margin-top:6px" onclick="openBiliConnect()">🔗 接入 B 站账号（说明）</button>
+      </div>
+    </section>
+
+    <!-- 5. 存钱计划 -->
+    <section class="module" id="mod-savings">
+      <div class="m-head"><h2>存钱计划</h2><span class="sub">每次存入 · 自动汇总 · 目标进度</span></div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h4a2 2 0 0 1 0 4H9"/></svg>储蓄目标</h4>
+        <div class="row">
+          <input id="goalInput" type="number" placeholder="目标金额 ¥" style="max-width:200px">
+          <button class="btn ghost" onclick="setGoal()">设定目标</button>
+        </div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>存入一笔</h4>
+        <div class="row">
+          <input id="saveAmount" type="number" placeholder="金额 ¥" style="max-width:160px">
+          <input id="saveNote" placeholder="备注（可选）" style="flex:1">
+          <button class="btn mint" onclick="addSaving()">存入</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ring-wrap">
+          <div id="saveRing"></div>
+          <div style="flex:1">
+            <div class="big-num" id="saveTotal" style="color:var(--green)">¥0</div>
+            <div class="legend" id="saveGoalText"></div>
+            <div class="progress-wrap"><div class="progress-bar" id="saveBar" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div id="saveList" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <!-- 6. 备忘录 -->
+    <section class="module" id="mod-memos">
+      <div class="m-head"><h2>备忘录</h2><span class="sub">语音速记 · 日程安排</span></div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>新建备忘</h4>
+        <div class="row">
+          <textarea id="memoInput" placeholder="说点或输入备忘内容…"></textarea>
+          <button class="mic" id="memoMic" title="语音输入" onclick="voiceTo('memoInput','memoMic')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <input id="memoDate" type="date" style="max-width:170px">
+          <input id="memoTime" type="time" style="max-width:140px">
+          <button class="btn" onclick="addMemo()">保存备忘</button>
+        </div>
+        <div class="hint">支持语音输入自动建立备忘；可指定日期/时间形成日程提醒，到期项会在「今天要处理」中高亮。</div>
+      </div>
+      <div class="card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>我的备忘</h4>
+        <div id="memoList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- modal -->
+<div class="modal-mask" id="modal"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 数据层 ============ */
+const PREFIX='wb_personal_';
+const K={plans:'plans',reading:'reading',english:'english',skills:'skills',savings:'savings',memos:'memos',settings:'settings'};
+const todayStr=()=>new Date().toISOString().slice(0,10);
+const ymd=(d)=>d.toISOString().slice(0,10);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function load(k){try{return JSON.parse(localStorage.getItem(PREFIX+K[k]));}catch(e){return null;}}
+function save(k,v){localStorage.setItem(PREFIX+K[k],JSON.stringify(v));}
+function get(k){let v=load(k);if(v===null){v=defaults(k);save(k,v);}return v;}
+function defaults(k){
+  if(k==='settings')return{name:'个人版',seeded:false};
+  if(k==='plans')return[];
+  if(k==='reading')return{manual:[],history:[]};
+  if(k==='english')return{words:[],dailyTarget:5,lastRecite:null,recitedToday:0,history:{week:[],month:[]}};
+  if(k==='skills')return[];
+  if(k==='savings')return{goal:0,records:[]};
+  if(k==='memos')return[];
+  return null;
+}
+
+/* 公版书库（维基文库真实直链） */
+const BOOKS=[
+  {t:'红楼梦',a:'曹雪芹',u:'https://zh.wikisource.org/wiki/紅樓夢'},
+  {t:'三国演义',a:'罗贯中',u:'https://zh.wikisource.org/wiki/三國演義'},
+  {t:'西游记',a:'吴承恩',u:'https://zh.wikisource.org/wiki/西遊記'},
+  {t:'水浒传',a:'施耐庵',u:'https://zh.wikisource.org/wiki/水滸傳'},
+  {t:'道德经',a:'老子',u:'https://zh.wikisource.org/wiki/道德經'},
+  {t:'论语',a:'孔子',u:'https://zh.wikisource.org/wiki/論語'},
+  {t:'诗经',a:'佚名',u:'https://zh.wikisource.org/wiki/詩經'},
+  {t:'资治通鉴',a:'司马光',u:'https://zh.wikisource.org/wiki/資治通鑑'},
+  {t:'呐喊',a:'鲁迅',u:'https://zh.wikisource.org/wiki/呐喊'},
+  {t:'朝花夕拾',a:'鲁迅',u:'https://zh.wikisource.org/wiki/朝花夕拾'},
+  {t:'骆驼祥子',a:'老舍',u:'https://zh.wikisource.org/wiki/駱駝祥子'},
+  {t:'背影',a:'朱自清',u:'https://zh.wikisource.org/wiki/背影'}
+];
+
+/* ============ 首次播种示例数据 ============ */
+function seed(){
+  const s=get('settings');
+  if(s.seeded)return;
+  const y=new Date();y.setDate(y.getDate()-1);const yStr=ymd(y);
+  // 计划：1 条逾期（昨日未完成）
+  save('plans',[
+    {id:uid(),text:'完成工作台原型设计稿',done:false,date:yStr,voice:false},
+    {id:uid(),text:'晨间运动 20 分钟',done:false,date:todayStr(),voice:false}
+  ]);
+  save('reading',{manual:[],history:[{book:'论语',date:yStr,minutes:15}]});
+  save('english',{words:[
+    {id:uid(),term:'diligent',def:'勤勉的',box:0,added:todayStr(),last:null},
+    {id:uid(),term:'resilient',def:'有韧性的',box:0,added:todayStr(),last:null},
+    {id:uid(),term:'ambiguous',def:'模糊的',box:0,added:todayStr(),last:null}
+  ],dailyTarget:5,lastRecite:null,recitedToday:0,history:{week:[],month:[]}});
+  save('skills',[{id:uid(),name:'Python 数据分析',period:'30 天',url:'',progress:30,added:todayStr(),source:'manual'}]);
+  save('savings',{goal:10000,records:[{id:uid(),amount:500,date:yStr,note:'月初零钱'},{id:uid(),amount:300,date:todayStr(),note:'兼职'}]});
+  save('memos',[{id:uid(),text:'下午 3 点团队同步会',date:todayStr(),time:'15:00',done:false,voice:false}]);
+  s.seeded=true;save('settings',s);
+}
+
+/* ============ 工具 ============ */
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* 语音输入 */
+let recog=null,recTarget=null,recBtn=null;
+function voiceTo(inputId,btnId){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('当前浏览器不支持语音，请手动输入（推荐 Chrome/Edge）');return;}
+  const input=document.getElementById(inputId),btn=document.getElementById(btnId);
+  if(recog&&recog.active){recog.stop();return;}
+  recog=new SR();recog.lang='zh-CN';recog.interimResults=false;recog.maxAlternatives=1;recog.active=true;
+  btn.classList.add('rec');toast('请说话…');
+  recog.onresult=e=>{const txt=e.results[0][0].transcript;input.value=(input.value?input.value+' ':'' )+txt;};
+  recog.onerror=()=>toast('语音识别失败，请重试或手动输入');
+  recog.onend=()=>{recog.active=false;btn.classList.remove('rec');};
+  recog.start();
+}
+
+/* 导航 */
+function switchMod(m){
+  document.querySelectorAll('.module').forEach(x=>x.classList.remove('active'));
+  document.getElementById('mod-'+m).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.mod===m));
+  closeDrawer();
+}
+document.getElementById('nav').addEventListener('click',e=>{const it=e.target.closest('.nav-item');if(it)switchMod(it.dataset.mod);});
+
+function openDrawer(){document.getElementById('sidebar').classList.add('open');document.getElementById('mask').classList.add('show');}
+function closeDrawer(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mask').classList.remove('show');}
+
+/* ============ 渲染：今日要处理 ============ */
+function renderToday(){
+  const chips=[];
+  let plans=get('plans').filter(p=>!p.done);
+  if(plans.length)chips.push(`<div class="chip alert" onclick="switchMod('plans')">📋 待办 ${plans.length} 项</div>`);
+  else chips.push(`<div class="chip ok">✓ 今日计划已清空</div>`);
+  const read=get('reading');const readToday=(read.history||[]).some(h=>h.date===todayStr());
+  if(readToday)chips.push(`<div class="chip ok">✓ 今日已阅读</div>`);
+  else chips.push(`<div class="chip alert" onclick="switchMod('reading')">📖 今日阅读未完成</div>`);
+  const eng=get('english');const recited=(eng.lastRecite===todayStr());
+  if(eng.words.length===0)chips.push(`<div class="chip" onclick="switchMod('english')">＋ 添加英语单词</div>`);
+  else if(recited)chips.push(`<div class="chip ok">✓ 今日已背诵</div>`);
+  else chips.push(`<div class="chip alert" onclick="switchMod('english')">🔤 今日背诵未完成</div>`);
+  const memos=get('memos').filter(m=>!m.done&&m.date===todayStr());
+  if(memos.length)chips.push(`<div class="chip alert" onclick="switchMod('memos')">⏰ 今日日程 ${memos.length} 项</div>`);
+  const sv=get('savings');const total=sv.records.reduce((a,b)=>a+b.amount,0);
+  chips.push(`<div class="chip" onclick="switchMod('savings')">💰 已存 ¥${total}</div>`);
+  document.getElementById('todayChips').innerHTML=chips.join('');
+}
+
+/* ============ 1. 计划 ============ */
+function carryOverPlans(){
+  let plans=get('plans');const td=todayStr();let changed=false;
+  plans.forEach(p=>{if(!p.done&&p.date<td){p.date=td;changed=true;}});
+  if(changed)save('plans',plans);
+}
+function renderPlans(){
+  carryOverPlans();
+  const plans=get('plans').filter(p=>p.date===todayStr());
+  const list=document.getElementById('planList');
+  document.getElementById('planCount').textContent=plans.filter(p=>!p.done).length+' 待办';
+  if(!plans.length){list.innerHTML='<div class="empty">今天还没有任务，添加一个吧 ✨</div>';return;}
+  list.innerHTML=plans.map(p=>`
+    <div class="item">
+      <div class="chk ${p.done?'done':''}" onclick="togglePlan('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></div>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg></div>
+      <div class="body"><div class="t" style="${p.done?'text-decoration:line-through;color:var(--sub)':''}">${esc(p.text)}</div><div class="m">${p.voice?'🎤 语音添加':'手动添加'}</div></div>
+      <div class="act"><div class="mini danger" onclick="delPlan('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div></div>
+    </div>`).join('');
+}
+function addPlan(){const i=document.getElementById('planInput');const t=i.value.trim();if(!t){toast('请输入任务');return;}let p=get('plans');p.push({id:uid(),text:t,done:false,date:todayStr(),voice:false});save('plans',p);i.value='';renderPlans();renderToday();}
+function togglePlan(id){let p=get('plans');p=p.map(x=>x.id===id?{...x,done:!x.done}:x);save('plans',p);renderPlans();renderToday();}
+function delPlan(id){let p=get('plans').filter(x=>x.id!==id);save('plans',p);renderPlans();renderToday();}
+
+/* ============ 2. 阅读 ============ */
+function featuredBook(){const idx=Math.floor((Date.now()/(1000*60*60*24))%BOOKS.length);return BOOKS[idx];}
+let readTimer=null,readSec=0,readBook=null;
+function renderReading(){
+  const fb=featuredBook();readBook=fb.t;
+  document.getElementById('featuredBook').innerHTML=`
+    <div class="book-cover">${esc(fb.t[0])}</div>
+    <div class="body" style="flex:1"><div style="font-weight:700;font-size:16px">${esc(fb.t)}</div><div class="m">${esc(fb.a)} · 公版书 · 维基文库</div></div>`;
+  const r=get('reading');
+  const totalMin=(r.history||[]).reduce((a,b)=>a+b.minutes,0);
+  const days=new Set((r.history||[]).map(h=>h.date)).size;
+  document.getElementById('readStats').innerHTML=`
+    <div class="stat"><div class="n">${totalMin}</div><div class="l">累计分钟</div></div>
+    <div class="stat"><div class="n">${days}</div><div class="l">阅读天数</div></div>
+    <div class="stat"><div class="n">${(r.manual||[]).length+(r.history||[]).length?((r.manual||[]).length+1):1}</div><div class="l">书籍数</div></div>`;
+  const hist=(r.history||[]).slice().reverse().slice(0,8).map(h=>`<div class="item"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><div class="body"><div class="t">${esc(h.book)}</div><div class="m">${h.date} · ${h.minutes} 分钟</div></div></div>`).join('');
+  document.getElementById('readHistory').innerHTML=hist||'<div class="empty">还没有阅读记录</div>';
+}
+function openFeatured(){const fb=featuredBook();window.open(fb.u,'_blank');toast('已打开《'+fb.t+'》');}
+function toggleReadTimer(){
+  const btn=document.getElementById('timerBtn');
+  if(readTimer){clearInterval(readTimer);readTimer=null;
+    const min=Math.round(readSec/60);
+    let r=get('reading');r.history=r.history||[];
+    const exists=r.history.find(h=>h.date===todayStr()&&h.book===readBook);
+    if(exists)exists.minutes+=min;else r.history.push({book:readBook,date:todayStr(),minutes:min});
+    save('reading',r);readSec=0;btn.textContent='⏱ 开始计时';btn.classList.remove('rec');
+    if(min>0){toast('已记录 '+min+' 分钟阅读');renderReading();renderToday();}
+    return;
+  }
+  readSec=0;readTimer=setInterval(()=>{readSec++;btn.textContent='⏱ '+Math.floor(readSec/60)+':'+String(readSec%60).padStart(2,'0');btn.classList.add('rec');},1000);
+}
+function addBook(){const t=document.getElementById('bookTitle').value.trim();const u=document.getElementById('bookUrl').value.trim();if(!t){toast('请输入书名');return;}let r=get('reading');r.manual=r.manual||[];r.manual.push({id:uid(),title:t,url:u});save('reading',r);document.getElementById('bookTitle').value='';document.getElementById('bookUrl').value='';toast('已添加《'+t+'》');renderReading();}
+
+/* ============ 3. 英语 ============ */
+function renderEnglish(){
+  const e=get('english');
+  // 今日背诵：取 box 最小（最该复习）的前 dailyTarget 个
+  const due=e.words.slice().sort((a,b)=>a.box-b.box).slice(0,e.dailyTarget||5);
+  document.getElementById('engCount').textContent=(e.lastRecite===todayStr()?'已背 '+e.recitedToday:'待背 '+due.length);
+  if(!e.words.length){document.getElementById('engToday').innerHTML='<div class="empty">词库为空，先添加单词吧</div>';}
+  else if(e.lastRecite===todayStr()){document.getElementById('engToday').innerHTML='<div class="empty">✓ 今天已背诵 '+e.recitedToday+' 个，明天继续！</div>';}
+  else{document.getElementById('engToday').innerHTML=due.map(w=>`
+    <div class="item">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+      <div class="body"><div class="t">${esc(w.term)}</div><div class="m">${esc(w.def)}</div></div>
+      <div class="act"><button class="btn mint" style="padding:8px 12px;font-size:13px" onclick="recite('${w.id}')">我已背</button></div>
+    </div>`).join('');}
+  const mastered=e.words.filter(w=>w.box>=3).length;
+  document.getElementById('engStats').innerHTML=`
+    <div class="stat"><div class="n">${e.words.length}</div><div class="l">总词条</div></div>
+    <div class="stat"><div class="n">${mastered}</div><div class="l">已掌握</div></div>
+    <div class="stat"><div class="n">${e.dailyTarget}</div><div class="l">每日目标</div></div>`;
+  document.getElementById('wordList').innerHTML=e.words.slice().reverse().map(w=>`
+    <div class="item"><div class="body"><div class="t">${esc(w.term)}</div><div class="m">${esc(w.def)} · 复习层级 ${w.box}</div></div>
+    <div class="act"><div class="mini danger" onclick="delWord('${w.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div></div></div>`).join('')||'<div class="empty">暂无单词</div>';
+}
+function addWord(){const t=document.getElementById('wordTerm').value.trim();const d=document.getElementById('wordDef').value.trim();if(!t){toast('请输入单词');return;}let e=get('english');e.words.push({id:uid(),term:t,def:d,box:0,added:todayStr(),last:null});save('english',e);document.getElementById('wordTerm').value='';document.getElementById('wordDef').value='';toast('已添加');renderEnglish();renderToday();}
+function recite(id){let e=get('english');e.words=e.words.map(w=>w.id===id?{...w,box:Math.min(w.box+1,5),last:todayStr()}:w);if(e.lastRecite!==todayStr()){e.recitedToday=0;e.lastRecite=todayStr();}e.recitedToday++;save('english',e);renderEnglish();renderToday();}
+function delWord(id){let e=get('english');e.words=e.words.filter(w=>w.id!==id);save('english',e);renderEnglish();}
+function searchEbook(){const t=prompt('输入要检索的英文书名/作者：','English grammar');if(!t)return;window.open('https://www.gutenberg.org/ebooks/search/?query='+encodeURIComponent(t),'_blank');}
+function reviewCheck(type){
+  const e=get('english');
+  const pool=type==='week'?e.words.filter(w=>w.box>=1):e.words;
+  const box=document.getElementById('reviewBox');
+  if(!pool.length){box.innerHTML='<div class="empty">暂无可复习词条</div>';return;}
+  const sample=pool.slice(0,10);
+  box.innerHTML=`<div style="font-size:13px;color:var(--sub);margin-bottom:8px">${type==='week'?'本周':'本月'}记忆检查（抽查 ${sample.length} 个）：</div>`+sample.map(w=>`
+    <div class="item"><div class="body"><div class="t">${esc(w.term)}</div><div class="m">${esc(w.def)}</div></div>
+    <div class="act"><span class="tag green">记得</span><span class="tag red">模糊</span></div></div>`).join('')+
+    `<div class="hint">✓ 记得＝已掌握；模糊＝建议回到每日背诵加强。可结合「我已背」提升复习层级。</div>`;
+}
+
+/* ============ 4. 技能 ============ */
+function renderSkills(){
+  const list=get('skills');
+  document.getElementById('skillList').innerHTML=list.length?list.map(s=>`
+    <div class="item">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+      <div class="body" style="flex:1">
+        <div class="t">${esc(s.name)} <span class="tag">${esc(s.period||'')}</span></div>
+        <div class="m">${s.source==='bili'?'B站检索':'手动添加'}</div>
+        <div class="progress-wrap" style="margin-top:8px"><div class="progress-bar" style="width:${s.progress||0}%"></div></div>
+        <div class="m" style="margin-top:4px">进度 ${s.progress||0}%</div>
+      </div>
+      <div class="act" style="flex-direction:column;gap:6px">
+        <input type="range" min="0" max="100" value="${s.progress||0}" style="width:110px" onchange="setSkill('${s.id}',this.value)">
+        <div style="display:flex;gap:6px">
+          ${s.url?`<div class="mini" title="打开课程" onclick="window.open('${esc(s.url)}','_blank')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></div>`:''}
+          <div class="mini" title="B站检索" onclick="biliSearch('${encodeURIComponent(s.name)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></div>
+          <div class="mini danger" title="删除" onclick="delSkill('${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div>
+        </div>
+      </div>
+    </div>`).join(''):'<div class="empty">还没有课程，添加一个开始学习吧</div>';
+}
+function addSkill(){const n=document.getElementById('skillName').value.trim();const p=document.getElementById('skillPeriod').value.trim();if(!n){toast('请输入课程名');return;}let s=get('skills');s.push({id:uid(),name:n,period:p,url:'',progress:0,added:todayStr(),source:'bili'});save('skills',s);document.getElementById('skillName').value='';document.getElementById('skillPeriod').value='';biliSearch(encodeURIComponent(n));renderSkills();}
+function biliSearch(q){window.open('https://search.bilibili.com/all?keyword='+q,'_blank');}
+function setSkill(id,v){let s=get('skills');s=s.map(x=>x.id===id?{...x,progress:Number(v)}:x);save('skills',s);renderSkills();}
+function delSkill(id){let s=get('skills').filter(x=>x.id!==id);save('skills',s);renderSkills();}
+function openBiliConnect(){
+  document.getElementById('modalBody').innerHTML=`
+    <h3>接入 B 站账号（说明）</h3>
+    <p style="font-size:14px;line-height:1.7;color:var(--ink)">获取你在 B 站的真实学习进度，需要 <b>B 站开放平台 OAuth 授权 + 后端服务</b>来安全地读取数据。当前为纯本地单文件版本，无法在浏览器内直接拿到你的账号进度。</p>
+    <p style="font-size:14px;line-height:1.7"><b>现在你有两个选择：</b></p>
+    <p style="font-size:14px;line-height:1.7">① 手动录入进度：在课程卡片拖动滑块即可记录（数据本地留存，安全）。<br>② 让我在下一轮加一个轻量后端做 OAuth 授权，实现自动同步进度。</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal()">知道了</button></div>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+/* ============ 5. 存钱 ============ */
+function renderSavings(){
+  const s=get('savings');
+  document.getElementById('goalInput').value=s.goal||'';
+  const total=s.records.reduce((a,b)=>a+b.amount,0);
+  document.getElementById('saveTotal').textContent='¥'+total;
+  const pct=s.goal>0?Math.min(100,Math.round(total/s.goal*100)):0;
+  document.getElementById('saveBar').style.width=pct+'%';
+  document.getElementById('saveGoalText').textContent=s.goal>0?('目标 ¥'+s.goal+' · 已完成 '+pct+'%'):'未设定目标';
+  // 环形进度
+  const R=42,C=2*Math.PI*R;const off=C*(1-pct/100);
+  document.getElementById('saveRing').innerHTML=`<svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="${R}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="11"/><circle cx="55" cy="55" r="${R}" fill="none" stroke="#4CC38A" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}" transform="rotate(-90 55 55)"/><text x="55" y="60" text-anchor="middle" font-size="20" font-weight="800" fill="#3A3A4A">${pct}%</text></svg>`;
+  document.getElementById('saveList').innerHTML=s.records.slice().reverse().map(r=>`
+    <div class="item"><div class="ic" style="background:rgba(76,195,138,.18)"><svg viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+    <div class="body"><div class="t" style="color:var(--green)">+¥${r.amount}</div><div class="m">${r.date} ${esc(r.note||'')}</div></div>
+    <div class="act"><div class="mini danger" onclick="delSaving('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div></div></div>`).join('')||'<div class="empty">还没有存款记录</div>';
+}
+function setGoal(){const v=Number(document.getElementById('goalInput').value)||0;let s=get('savings');s.goal=v;save('savings',s);renderSavings();toast('目标已设定');}
+function addSaving(){const a=Number(document.getElementById('saveAmount').value);if(!a||a<=0){toast('请输入金额');return;}let s=get('savings');s.records.push({id:uid(),amount:a,date:todayStr(),note:document.getElementById('saveNote').value.trim()});save('savings',s);document.getElementById('saveAmount').value='';document.getElementById('saveNote').value='';renderSavings();renderToday();}
+function delSaving(id){let s=get('savings');s.records=s.records.filter(r=>r.id!==id);save('savings',s);renderSavings();renderToday();}
+
+/* ============ 6. 备忘录 ============ */
+function renderMemos(){
+  const list=get('memos').slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  document.getElementById('memoList').innerHTML=list.length?list.map(m=>{
+    const due=m.date===todayStr();
+    return `<div class="item">
+      <div class="chk ${m.done?'done':''}" onclick="toggleMemo('${m.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></div>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+      <div class="body"><div class="t" style="${m.done?'text-decoration:line-through;color:var(--sub)':''}">${esc(m.text)}</div><div class="m">${m.date} ${m.time||''} ${due&&!m.done?'· 今天':''} ${m.voice?'· 🎤':''}</div></div>
+      <div class="act"><div class="mini danger" onclick="delMemo('${m.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div></div>
+    </div>`;}).join(''):'<div class="empty">还没有备忘</div>';
+}
+function addMemo(){const t=document.getElementById('memoInput').value.trim();if(!t){toast('请输入备忘内容');return;}let m=get('memos');m.push({id:uid(),text:t,date:document.getElementById('memoDate').value||todayStr(),time:document.getElementById('memoTime').value||'',done:false,voice:false});save('memos',m);document.getElementById('memoInput').value='';renderMemos();renderToday();toast('备忘已保存');}
+function toggleMemo(id){let m=get('memos');m=m.map(x=>x.id===id?{...x,done:!x.done}:x);save('memos',m);renderMemos();renderToday();}
+function delMemo(id){let m=get('memos').filter(x=>x.id!==id);save('memos',m);renderMemos();renderToday();}
+
+/* ============ 备份 ============ */
+function exportAll(){
+  const data={};for(const k in K)data[k]=load(k);
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='personal-workspace-backup-'+todayStr()+'.json';a.click();
+  toast('已导出备份');
+}
+function importAll(e){
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);for(const k in K){if(d[k]!==undefined)localStorage.setItem(PREFIX+K[k],JSON.stringify(d[k]));}toast('导入成功，正在刷新');setTimeout(renderAll,300);}catch(err){toast('文件格式错误');}};
+  rd.readAsText(f);e.target.value='';
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+
+/* ============ 初始化 ============ */
+function renderAll(){
+  renderToday();renderPlans();renderReading();renderEnglish();renderSkills();renderSavings();renderMemos();
+}
+seed();
+const st=get('settings');document.getElementById('ownerName').textContent=st.name||'个人版';
+renderAll();
+// 30 条温和提示
+window.addEventListener('load',()=>{
+  const cnt=[get('plans'),get('reading').history,get('english').words,get('skills'),get('savings').records,get('memos')].reduce((a,b)=>a+(Array.isArray(b)?b.length:0),0);
+  if(cnt>=30)toast('数据已积累 '+cnt+' 条，建议导出备份 💾');
+});
+</script>
+</body>
+</html>
